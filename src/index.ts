@@ -133,17 +133,8 @@ const limiter = IS_DEV
       skip: (req) => req.path === '/api/health'
     });
 
-// Rate limiting estricto para login
-const loginLimiter = IS_DEV
-  ? (req: any, _res: any, next: any) => next()
-  : rateLimit({
-      windowMs: rateLimitConfig.auth.windowMs,
-      max: rateLimitConfig.auth.max,
-      message: rateLimitConfig.auth.message,
-      skipSuccessfulRequests: rateLimitConfig.auth.skipSuccessfulRequests,
-      standardHeaders: true,
-      legacyHeaders: false
-    });
+// Rate limiting estricto para login - DESACTIVADO temporalmente
+const loginLimiter = (req: any, _res: any, next: any) => next();
 
 // Body parser con límite
 app.use(payloadSizeLimit(MAX_PAYLOAD));

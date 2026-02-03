@@ -70,49 +70,44 @@ const IS_DEV = NODE_ENV !== 'production';
 const MAX_PAYLOAD = process.env.PAYLOAD_MAX_SIZE || '5mb';
 
 // =============================================
-// CORS - PRIMERO ANTES DE TODO
+// CORS - USAR PAQUETE CORS SIMPLIFICADO
 // =============================================
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .split(',')
   .map(o => o.trim());
 
 console.log('🌐 CORS Origins permitidos:', allowedOrigins);
+console.log('🌐 NODE_ENV:', NODE_ENV);
 
-// Manejar preflight requests PRIMERO
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (!origin || IS_DEV) {
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  res.status(204).end();
-});
-
-// CORS para todas las requests
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (!origin) {
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
-  }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  next();
-});
+// Usar cors package directamente - MUY SIMPLE
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permitir requests sin origin (Postman, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('⚠️ CORS bloqueado:', origin, 'no está en', allowedOrigins);
+      callback(null, true); // Temporalmente permitir todo para debug
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+}));
 
 // =============================================
 // MIDDLEWARE DE SEGURIDAD
 // =============================================
 
-// Helmet: Headers de seguridad HTTP (desactivar para que no interfiera con CORS)
+// Helmet: Headers de seguridad HTTP (configuración permisiva)
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginEmbedderPolicy: false
 }));
 
 // Remover headers que exponen información

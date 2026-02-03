@@ -286,18 +286,36 @@ export const detectMaliciousInput = (input: string): boolean => {
 
 const corsAllowlist = (() => {
   const raw = process.env.CORS_ORIGINS || process.env.RAILWAY_STATIC_URL || 'http://localhost:5173';
-  return raw
+  const origins = raw
     .split(',')
     .map(o => o.trim())
-    .filter(Boolean)
-    .map(origin => {
-      if (origin.startsWith('http://') || origin.startsWith('https://')) return origin;
-      return `https://${origin}`;
-    });
+    .filter(Boolean);
+  
+  console.log('🔧 CORS Origins configurados:', origins);
+  return origins;
 })();
 
 export const corsConfig = {
-  origin: corsAllowlist,
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Permitir requests sin origin (como Postman, curl, o server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Verificar si el origin está en la lista permitida
+    if (corsAllowlist.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // En desarrollo, permitir localhost
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    console.log('⚠️ CORS bloqueado para origin:', origin);
+    console.log('📋 Origins permitidos:', corsAllowlist);
+    return callback(null, false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

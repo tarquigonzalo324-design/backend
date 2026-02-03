@@ -70,33 +70,37 @@ const IS_DEV = NODE_ENV !== 'production';
 const MAX_PAYLOAD = process.env.PAYLOAD_MAX_SIZE || '5mb';
 
 // =============================================
-// CORS - USAR PAQUETE CORS SIMPLIFICADO
+// CORS - MANUAL Y DIRECTO (antes de TODO)
 // =============================================
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .split(',')
   .map(o => o.trim());
 
 console.log('🌐 CORS Origins permitidos:', allowedOrigins);
-console.log('🌐 NODE_ENV:', NODE_ENV);
 
-// Usar cors package directamente - MUY SIMPLE
-app.use(cors({
-  origin: function(origin, callback) {
-    // Permitir requests sin origin (Postman, curl, etc)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('⚠️ CORS bloqueado:', origin, 'no está en', allowedOrigins);
-      callback(null, true); // Temporalmente permitir todo para debug
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
-}));
+// CORS manual - funciona 100%
+app.use((req, res, next) => {
+  const origin = req.headers.origin as string;
+  
+  // Setear headers de CORS
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (allowedOrigins.length > 0) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
+  }
+  
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Responder inmediatamente a preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // =============================================
 // MIDDLEWARE DE SEGURIDAD

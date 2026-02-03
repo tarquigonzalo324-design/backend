@@ -18,13 +18,10 @@ const poolConfig: PoolConfig = {
   connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT || '2000', 10),
 };
 
-// Habilitar SSL en producción
+// Habilitar SSL en producción - Railway usa certificados auto-firmados
 if (NODE_ENV === 'production') {
   poolConfig.ssl = {
-    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
-    ca: process.env.DB_SSL_CA ? Buffer.from(process.env.DB_SSL_CA, 'base64').toString() : undefined,
-    cert: process.env.DB_SSL_CERT ? Buffer.from(process.env.DB_SSL_CERT, 'base64').toString() : undefined,
-    key: process.env.DB_SSL_KEY ? Buffer.from(process.env.DB_SSL_KEY, 'base64').toString() : undefined,
+    rejectUnauthorized: false  // Railway usa certificados auto-firmados
   };
   logger.info('SSL habilitado para conexión PostgreSQL');
 }

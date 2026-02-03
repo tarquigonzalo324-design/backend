@@ -70,11 +70,50 @@ const IS_DEV = NODE_ENV !== 'production';
 const MAX_PAYLOAD = process.env.PAYLOAD_MAX_SIZE || '5mb';
 
 // =============================================
+// CORS - PRIMERO ANTES DE TODO
+// =============================================
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
+console.log('🌐 CORS Origins permitidos:', allowedOrigins);
+
+// Manejar preflight requests PRIMERO
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin || IS_DEV) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
+
+// CORS para todas las requests
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  next();
+});
+
+// =============================================
 // MIDDLEWARE DE SEGURIDAD
 // =============================================
 
-// Helmet: Headers de seguridad HTTP
-app.use(helmet(helmetConfig));
+// Helmet: Headers de seguridad HTTP (desactivar para que no interfiera con CORS)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false
+}));
 
 // Remover headers que exponen información
 app.use(removeServerHeader);
@@ -82,10 +121,6 @@ app.use(addSecurityHeaders);
 
 // Security Logger
 app.use(securityLogger);
-
-// CORS mejorado con validación
-app.use(cors(corsConfig));
-app.use(corsPreflightCache);
 
 // Rate Limiting: Protección contra ataques de fuerza bruta
 const limiter = IS_DEV

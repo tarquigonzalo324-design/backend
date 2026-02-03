@@ -1,0 +1,92 @@
+# =====================================================
+# ARCHIVOS SENSIBLES Y SECRETOS
+# =====================================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Certificados SSL
+*.pem
+*.key
+*.crt
+*.cert
+*.p8
+*.p12
+*.pfx
+
+# =====================================================
+# NODE.JS Y PAQUETES
+# =====================================================
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# =====================================================
+# BUILD Y COMPILACIÓN
+# =====================================================
+dist/
+build/
+out/
+*.js
+*.js.map
+!*.config.js
+
+# =====================================================
+# IDE Y EDITORES
+# =====================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+.env.local
+.env.*.local
+
+# =====================================================
+# LOGS
+# =====================================================
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+
+# =====================================================
+# BASES DE DATOS
+# =====================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# =====================================================
+# ARCHIVOS TEMPORALES
+# =====================================================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# =====================================================
+# ANÁLISIS Y COBERTURA
+# =====================================================
+coverage/
+.nyc_output/
+
+# =====================================================
+# HERRAMIENTAS DE DESARROLLO
+# =====================================================
+.env.test
+.env.test.local

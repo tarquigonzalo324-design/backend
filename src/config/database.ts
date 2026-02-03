@@ -6,13 +6,13 @@ dotenv.config();
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Configurar pool de conexiones
+// Configurar pool de conexiones (compatible con Railway y variables estándar)
 const poolConfig: PoolConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432', 10),
+  database: process.env.DB_NAME || process.env.PGDATABASE || process.env.POSTGRES_DB,
+  user: process.env.DB_USER || process.env.PGUSER || process.env.POSTGRES_USER,
+  password: process.env.DB_PASSWORD || process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD,
   max: parseInt(process.env.DB_POOL_MAX || '20', 10),
   idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10),
   connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT || '2000', 10),

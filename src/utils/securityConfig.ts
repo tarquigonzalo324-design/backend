@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from './logger';
+import crypto from 'crypto';
 
 /**
  * CONFIGURACIÓN DE SEGURIDAD COMPLETA DEL BACKEND
@@ -11,16 +12,39 @@ import logger from './logger';
 // VALIDACIÓN DE VARIABLES DE ENTORNO CRÍTICAS
 // =====================================================
 
-export const validateCriticalEnvVars = (): void => {
-  const criticalVars = [
-    'JWT_SECRET',
-    'DB_HOST',
-    'DB_USER',
-    'DB_PASSWORD',
-    'DB_NAME'
-  ];
+// Generar secretos seguros si no existen (solo para producción en Railway)
+const generateSecureSecret = (length: number = 64): string => {
+  return crypto.randomBytes(length).toString('hex');
+};
 
-  const missing = criticalVars.filter(varName => !process.env[varName]);
+// Configurar JWT_SECRET automáticamente si no existe
+if (!process.env.JWT_SECRET) {
+  const generatedSecret = generateSecureSecret(64);
+  process.env.JWT_SECRET = generatedSecret;
+  console.log('⚠️ JWT_SECRET generado automáticamente (considere configurarlo manualmente en producción)');
+}
+
+if (!process.env.REFRESH_TOKEN_SECRET) {
+  const generatedSecret = generateSecureSecret(64);
+  process.env.REFRESH_TOKEN_SECRET = generatedSecret;
+  console.log('⚠️ REFRESH_TOKEN_SECRET generado automáticamente');
+}
+
+export const validateCriticalEnvVars = (): void => {
+  // Verificar conexión a base de datos (compatible con Railway)
+  const dbHost = process.env.DB_HOST || process.env.PGHOST;
+  const dbUser = process.env.DB_USER || process.env.PGUSER || process.env.POSTGRES_USER;
+  const dbPassword = process.env.DB_PASSWORD || process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD;
+  const dbName = process.env.DB_NAME || process.env.PGDATABASE || process.env.POSTGRES_DB;
+  const jwtSecret = process.env.JWT_SECRET;
+
+  const missing: string[] = [];
+  
+  if (!jwtSecret) missing.push('JWT_SECRET');
+  if (!dbHost) missing.push('DB_HOST o PGHOST');
+  if (!dbUser) missing.push('DB_USER o PGUSER');
+  if (!dbPassword) missing.push('DB_PASSWORD o PGPASSWORD');
+  if (!dbName) missing.push('DB_NAME o PGDATABASE');
 
   if (missing.length > 0) {
     logger.error({
@@ -32,8 +56,7 @@ export const validateCriticalEnvVars = (): void => {
   }
 
   // Validar que JWT_SECRET sea suficientemente fuerte
-  const jwtSecret = process.env.JWT_SECRET || '';
-  if (jwtSecret.length < 32) {
+  if (jwtSecret && jwtSecret.length < 32) {
     logger.warn({
       message: 'JWT_SECRET muy corto (mínimo 32 caracteres recomendado)',
       length: jwtSecret.length,

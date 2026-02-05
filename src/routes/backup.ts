@@ -1,13 +1,17 @@
 import { Router, Request, Response } from 'express';
 import pool from '../config/database';
 import logger from '../utils/logger';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 // Middleware para verificar rol admin/desarrollador
 const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const user = (req as any).user;
-  if (!user || (user.rol !== 'Administrador' && user.rol !== 'Desarrollador')) {
+  const userRole = (req as any).userRole;
+  const rolesPermitidos = ['administrador', 'desarrollador'];
+  
+  if (!userRole || !rolesPermitidos.includes(userRole.toLowerCase())) {
+    logger.warn({ message: 'Acceso denegado a backup', userRole });
     return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden realizar esta acción.' });
   }
   next();
@@ -53,10 +57,10 @@ const escapeSqlValue = (value: any): string => {
 };
 
 // GET /api/backup/crear - Generar y descargar backup
-router.get('/crear', requireAdmin, async (req: Request, res: Response) => {
+router.get('/crear', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    logger.info({ message: 'Iniciando backup de base de datos', usuario: user?.username });
+    const userId = (req as any).userId;
+    logger.info({ message: 'Iniciando backup de base de datos', userId });
 
     let sqlContent = '';
     const fecha = new Date().toISOString().split('T')[0];
@@ -66,7 +70,7 @@ router.get('/crear', requireAdmin, async (req: Request, res: Response) => {
     sqlContent += `-- =====================================================\n`;
     sqlContent += `-- BACKUP SISTEMA HOJAS DE RUTA\n`;
     sqlContent += `-- Fecha: ${fecha} ${hora}\n`;
-    sqlContent += `-- Usuario: ${user?.username || 'Sistema'}\n`;
+    sqlContent += `-- Usuario ID: ${userId || 'Sistema'}\n`;
     sqlContent += `-- =====================================================\n\n`;
     sqlContent += `-- IMPORTANTE: Este backup solo contiene los DATOS (INSERT)\n`;
     sqlContent += `-- La estructura de tablas debe existir previamente\n\n`;
@@ -125,9 +129,9 @@ router.get('/crear', requireAdmin, async (req: Request, res: Response) => {
 });
 
 // POST /api/backup/restaurar - Restaurar desde archivo SQL
-router.post('/restaurar', requireAdmin, async (req: Request, res: Response) => {
+router.post('/restaurar', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const userId = (req as any).userId;
     const { sql_content, confirmar } = req.body;
 
     if (!confirmar) {
@@ -141,7 +145,7 @@ router.post('/restaurar', requireAdmin, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Contenido SQL no proporcionado' });
     }
 
-    logger.info({ message: 'Iniciando restauración de backup', usuario: user?.username });
+    logger.info({ message: 'Iniciando restauración de backup', userId });
 
     // Separar comandos SQL (por punto y coma seguido de salto de línea)
     const comandos = sql_content
@@ -190,7 +194,7 @@ router.post('/restaurar', requireAdmin, async (req: Request, res: Response) => {
 });
 
 // GET /api/backup/info - Información de la base de datos
-router.get('/info', requireAdmin, async (req: Request, res: Response) => {
+router.get('/info', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const info: any = { tablas: [] };
 

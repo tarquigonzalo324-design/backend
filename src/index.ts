@@ -28,6 +28,7 @@ import historialRoutes from './routes/historial';
 import progresoRoutes from './routes/progreso';
 import unidadesRoutes from './routes/unidades';
 import usuariosRoutes from './routes/usuarios';
+import backupRoutes from './routes/backup';
 import pool from './config/database';
 
 dotenv.config();
@@ -173,6 +174,7 @@ app.use('/api/historial', historialRoutes);
 app.use('/api/progreso', progresoRoutes);
 app.use('/api/unidades', unidadesRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/backup', backupRoutes);
 
 // =============================================
 // MANEJO DE ERRORES

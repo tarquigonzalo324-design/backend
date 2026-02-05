@@ -174,7 +174,7 @@ router.post('/restaurar', authenticateToken, requireAdmin, async (req: Request, 
 
     logger.info({ 
       message: 'Restauración completada', 
-      usuario: user?.username,
+      userId,
       comandos_ejecutados: ejecutados,
       errores 
     });

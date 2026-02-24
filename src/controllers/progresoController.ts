@@ -409,7 +409,7 @@ export const obtenerRespuestasUnidades = async (req: Request, res: Response) => 
       LEFT JOIN usuarios u ON phr.responsable_id = u.id
       LEFT JOIN unidades un ON phr.unidad_destino_id = un.id
       WHERE phr.hoja_ruta_id = $1 
-        AND phr.accion IN ('RECIBIDA', 'RESPUESTA', 'REDIRIGIDA', 'enviado_a_unidad')
+        AND LOWER(phr.accion) IN ('recibido', 'respondido', 'redirigido', 'enviado_a_unidad', 'enviado')
       ORDER BY phr.fecha_registro ASC`,
       [hoja_ruta_id]
     );

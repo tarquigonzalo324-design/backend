@@ -560,6 +560,22 @@ export const marcarRecibido = async (req: AuthRequest, res: Response) => {
       [envio.hoja_id]
     );
     
+    // Crear notificación de recepción para el usuario que creó/envió la HR
+    try {
+      const hojaCreador = await pool.query('SELECT usuario_creador_id, numero_hr FROM hojas_ruta WHERE id = $1', [envio.hoja_id]);
+      if (hojaCreador.rows.length > 0 && hojaCreador.rows[0].usuario_creador_id) {
+        const { usuario_creador_id, numero_hr } = hojaCreador.rows[0];
+        await pool.query(
+          `INSERT INTO notificaciones (hoja_ruta_id, usuario_id, tipo, mensaje)
+           VALUES ($1, $2, 'recibido', $3)`,
+          [envio.hoja_id, usuario_creador_id, `📥 H.R. #${numero_hr} fue recibida por ${nombreUnidad}`]
+        );
+        console.log(`📬 Notificación de recepción creada para usuario ${usuario_creador_id}`);
+      }
+    } catch (notifErr) {
+      console.error('Error al crear notificación de recepción:', notifErr);
+    }
+    
     return res.status(200).json({ success: true, envio: result.rows[0] });
   } catch (err: any) {
     console.error('Error al marcar recibido:', err);
@@ -659,6 +675,22 @@ export const enviarRespuesta = async (req: AuthRequest, res: Response) => {
       `UPDATE hojas_ruta SET estado = 'respondida', actualizado_en = now() WHERE id = $1`,
       [envio.hoja_id]
     );
+    
+    // Crear notificación de respuesta para el usuario que creó/envió la HR
+    try {
+      const hojaCreador = await pool.query('SELECT usuario_creador_id, numero_hr FROM hojas_ruta WHERE id = $1', [envio.hoja_id]);
+      if (hojaCreador.rows.length > 0 && hojaCreador.rows[0].usuario_creador_id) {
+        const { usuario_creador_id, numero_hr } = hojaCreador.rows[0];
+        await pool.query(
+          `INSERT INTO notificaciones (hoja_ruta_id, usuario_id, tipo, mensaje)
+           VALUES ($1, $2, 'respondido', $3)`,
+          [envio.hoja_id, usuario_creador_id, `💬 H.R. #${numero_hr} recibió respuesta de ${nombreUnidad}`]
+        );
+        console.log(`📬 Notificación de respuesta creada para usuario ${usuario_creador_id}`);
+      }
+    } catch (notifErr) {
+      console.error('Error al crear notificación de respuesta:', notifErr);
+    }
     
     return res.status(200).json({ success: true, envio: result.rows[0] });
   } catch (err: any) {
